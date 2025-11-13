@@ -1,4 +1,7 @@
+import os
+from sys import prefix
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.database import engine
 from app import models
@@ -7,23 +10,28 @@ from app.routers import auth, negocios, transacciones
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 🚀 Se ejecuta al iniciar la app
-    async with engine.begin() as conn:
-        # Solo para desarrollo: crea tablas si no existen
-        await conn.run_sync(models.Base.metadata.create_all)
+    if os.getenv("ENV") == "dev":
+        async with engine.begin() as conn:
+            # Solo para desarrollo: crea tablas si no existen
+            await conn.run_sync(models.Base.metadata.create_all)
     yield
-    # 🛑 Se ejecuta al cerrar la app (si quisieras liberar recursos)
-    print("Cerrando aplicación...")
-
 app = FastAPI(
     title="Gestor de Negocios - Backend",
     lifespan=lifespan
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Cambia esto en producción
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Rutas
-app.include_router(auth.router)
-app.include_router(negocios.router)
-app.include_router(transacciones.router)
+app.include_router(auth.router, tags=["Autenticación"])
+app.include_router(negocios.router, prefix="/negocios", tags=["Negocios"])
+app.include_router(transacciones.router, prefix="/transacciones", tags=["Transacciones"])
 
 @app.get("/")
 async def root():

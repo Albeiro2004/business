@@ -1,9 +1,31 @@
-fastapi==0.100.0
-uvicorn[standard]==0.22.0
-SQLAlchemy==2.0.44
-asyncpg==0.28.0
-alembic==1.11.0
-pydantic==1.10.12
-python-dotenv==1.0.0
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
+# FastAPI y servidor ASGI
+fastapi
+uvicorn[standard]
+
+# Base de datos asíncrona con SQLAlchemy y PostgreSQL
+sqlalchemy>=1.4
+asyncpg
+
+# Autenticación y seguridad
+bcrypt==4.0.1
+python-jose[cryptography]
+passlib[bcrypt]
+
+# Manejo de variables de entorno
+python-dotenv
+
+# Validación y serialización
+pydantic
+pydantic[email]
+email-validator
+
+# Pruebas
+pytest
+pytest-asyncio
+httpx
+
+# Tipado opcional
+types-python-jose
+types-passlib
+
+python-multipart

@@ -12,12 +12,15 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=schemas.UsuarioOut)
 async def register(user_in: schemas.UsuarioCreate, db: AsyncSession = Depends(get_db)):
-    existing = await crud.get_usuario_por_email(db, user_in.email)
+    email = user_in.email.strip().lower()
+    existing = await crud.get_usuario_por_email(db, email)
+    if len(user_in.password) < 6:
+        raise HTTPException(status_code=400, detail="La contraseña debe tener al menos 6 caracteres")
     if existing:
         raise HTTPException(status_code=400, detail="El email ya está registrado")
     user = Usuario(
         nombre=user_in.nombre,
-        email=user_in.email,
+        email=email,
         hashed_password=hash_password(user_in.password)
     )
     db.add(user)
@@ -31,5 +34,5 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     user = result.scalar_one_or_none()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Credenciales incorrectas")
-    access_token = create_access_token({"sub": str(user.id)})
+    access_token = create_access_token({"sub": str(user.id), "email": user.email})
     return {"access_token": access_token, "token_type": "bearer"}

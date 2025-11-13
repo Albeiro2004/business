@@ -34,15 +34,20 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifica una contraseña de texto plano contra el hash almacenado."""
     return pwd_context.verify(plain_password, hashed_password)
 
+def very_secret_key():
+    if not SECRET_KEY:
+        raise RuntimeError("SECRET_KEY not defined")
 
 # --- Función de JWT ---
 def create_access_token(data: dict, expire_delta: timedelta = None):
     """Crea un nuevo Token de Acceso JWT con la carga útil (payload) dada."""
     to_encode = data.copy()
+
     # Calcula el tiempo de expiración
     expire = datetime.utcnow() + (expire_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     # Codifica y firma el token usando la clave secreta y el algoritmo
+    very_secret_key()
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
@@ -59,9 +64,12 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
+
+        very_secret_key()
+
         # Decodifica el token
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        sub = payload.get("sub")  # 'sub' debe contener el ID de usuario
+        sub = payload.get("sub")
         if sub is None:
             raise credentials_exception
         user_id = int(sub)

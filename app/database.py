@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
 import ssl
 
-# Carga las variables de entorno desde un archivo .env.
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")

@@ -26,7 +26,6 @@ class UsuarioOut(UsuarioBase):
 class NegocioBase(BaseModel):
     nombre: str = Field(..., max_length=200)
     descripcion: Optional[str] = None
-    fecha_creacion: date
 
 class NegocioCreate(NegocioBase):
     pass
@@ -46,7 +45,7 @@ class NegocioOut(NegocioBase):
 class TransaccionBase(BaseModel):
     negocio_id: int
     tipo: TipoTransaccion
-    monto: Decimal
+    monto: Decimal = Field(..., gt = 0, description = "Monto debe ser mayor a cero")
     descripcion: Optional[str] = None
     fecha: date
 
@@ -66,3 +65,5 @@ class BalanceOut(BaseModel):
     total_ingresos: Decimal
     total_egresos: Decimal
     balance: Decimal
+    fecha_inicio: Optional[date] = None
+    fecha_fin: Optional[date] = None
