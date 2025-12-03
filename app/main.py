@@ -30,8 +30,8 @@ app.add_middleware(
 
 # Rutas
 app.include_router(auth.router, tags=["Autenticación"])
-app.include_router(negocios.router, prefix="/negocios", tags=["Negocios"])
-app.include_router(transacciones.router, prefix="/transacciones", tags=["Transacciones"])
+app.include_router(negocios.router, tags=["Negocios"])
+app.include_router(transacciones.router, tags=["Transacciones"])
 
 @app.get("/")
 async def root():
