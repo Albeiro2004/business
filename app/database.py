@@ -11,8 +11,12 @@ engine = create_async_engine(
     DATABASE_URL,
     echo=False,
     future=True,
-    connect_args={"ssl": True},   # asyncpg usa esto
+    connect_args={"ssl": True},
+    pool_pre_ping=True,     # evita usar conexiones muertas
+    pool_size=5,
+    max_overflow=10
 )
+
 
 # Nuevo: async_sessionmaker (SQLAlchemy 2.x)
 async_session_maker = async_sessionmaker(
