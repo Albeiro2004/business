@@ -52,6 +52,11 @@ class TransaccionBase(BaseModel):
 class TransaccionCreate(TransaccionBase):
     pass
 
+class TransaccionUpdate(BaseModel):
+    tipo: Optional[TipoTransaccion]
+    monto: Optional[Decimal]
+    descripcion: Optional[str]
+
 class TransaccionOut(TransaccionBase):
     id: int
     created_at: datetime

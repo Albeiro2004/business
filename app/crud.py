@@ -1,9 +1,13 @@
 from datetime import date
+from http.client import HTTPException
+
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from decimal import Decimal
 from typing import List, Optional
 from datetime import datetime
+
+from watchfiles import awatch
 
 from app import models, schemas
 
@@ -18,25 +22,32 @@ async def create_negocio(db: AsyncSession, negocio_in: schemas.NegocioCreate, us
     obj = models.Negocio(
         nombre = negocio_in.nombre,
         descripcion = negocio_in.descripcion,
-        fecha_creacion = datetime.now(),
-        usuario_id = usuario_id
+        fecha_creacion = date.today(),
     )
     db.add(obj)
+    await db.flush()
+    await db.execute(models.usuarios_negocios.insert().values(usuario_id=usuario_id, negocio_id=obj.id))
     await db.commit()
     await db.refresh(obj)
     return obj
 
-async  def get_negocios(db: AsyncSession, usuario_id: int) -> List[models.Negocio]:
+
+async def get_negocios(db: AsyncSession, usuario_id: int):
     result = await db.execute(
-        select(models.Negocio).where(models.Negocio.usuario_id == usuario_id).order_by(models.Negocio.created_at.desc())
+        select(models.Negocio)
+        .join(models.usuarios_negocios, models.usuarios_negocios.c.negocio_id == models.Negocio.id)
+        .where(models.usuarios_negocios.c.usuario_id == usuario_id)
+        .order_by(models.Negocio.created_at.desc())
     )
     return result.scalars().all()
 
 async def get_negocio(db: AsyncSession, negocio_id: int, usuario_id: int) -> Optional[models.Negocio]:
     result = await db.execute(
-        select(models.Negocio).where(
+        select(models.Negocio)
+        .join(models.usuarios_negocios, models.usuarios_negocios.c.negocio_id == models.Negocio.id)
+        .where(
             models.Negocio.id == negocio_id,
-            models.Negocio.usuario_id == usuario_id
+            models.usuarios_negocios.c.usuario_id == usuario_id
         )
     )
     return result.scalar_one_or_none()
@@ -62,10 +73,14 @@ async def delete_negocio(db: AsyncSession, negocio_id: int, usuario_id: int) -> 
     return True
 
 # Transacciones
-async def create_transaccion(db: AsyncSession, tx_in: schemas.TransaccionCreate) -> models.Transaccion:
+async def create_transaccion(db: AsyncSession, tx_in: schemas.TransaccionCreate, usuario_id: int) -> models.Transaccion:
+
+    if not await usuario_en_negocio(db, tx_in.negocio_id, usuario_id):
+        raise HTTPException(status_code=403, detail="No autorizado para este negocio")
+
     obj = models.Transaccion(
         negocio_id=tx_in.negocio_id,
-        tipo=models.TipoTransaccion(tx_in.tipo.value),
+        tipo=models.TipoTransaccion(tx_in.tipo.value if hasattr(tx_in.tipo, "value") else tx_in.tipo),
         monto=tx_in.monto,
         descripcion=tx_in.descripcion,
         fecha=tx_in.fecha
@@ -151,3 +166,30 @@ async def get_balance(db: AsyncSession, negocio_id: int, fecha_inicio: Optional[
         "fecha_inicio": fecha_inicio,
         "fecha_fin": fecha_fin
     }
+
+
+async def usuario_en_negocio(db: AsyncSession, negocio_id: int, usuario_id: int) -> bool:
+    result = await db.execute(
+        select(models.usuarios_negocios)
+        .where(
+            models.usuarios_negocios.c.negocio_id == negocio_id,
+                        models.usuarios_negocios.c.usuario_id == usuario_id
+        )
+    )
+    return result.first() is not None
+
+async def agregar_usuario_a_negocio(db:AsyncSession, negocio_id: int, usuario_id: int):
+
+    neg = await db.execute(select(models.Negocio).where(models.Negocio.id == negocio_id))
+    negocio = neg.scalar_one_or_none()
+    usr = await db.execute(select(models.Usuario).where(models.Usuario.id == usuario_id))
+    usuario = usr.scalar_one_or_none()
+    if not negocio or not usuario:
+        raise HTTPException(status_code=404, detail="Usuario o negocio no encontrado")
+
+    if await usuario_en_negocio(db, negocio_id, usuario_id):
+        return {"mensaje": "Usuario ya está asociado al negocio"}
+
+    await db.execute(models.usuarios_negocios.insert().values(usuario_id=usuario_id, negocio_id=negocio_id))
+    await db.commit()
+    return {"mensaje": "Usuario agregado satisfactoriamente"}
