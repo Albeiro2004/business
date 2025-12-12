@@ -39,7 +39,7 @@ async def delete_negocio(negocio_id: int, db: AsyncSession = Depends(get_db), cu
     obj = await crud.delete_negocio(db, negocio_id, current_user.id)
     if not obj:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Negocio no encontrado")
-    await crud.delete_negocio(db, negocio_id)
+    await crud.delete_negocio(db, negocio_id, current_user.id)
     return {"detail": "Negocio eliminado"}
 
 @router.get("/{negocio_id}/usuarios", response_model=List[schemas.UsuarioOut])

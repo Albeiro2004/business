@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from app.database import engine
 from app import models
-from app.routers import auth, negocios, transacciones
+from app.routers import auth, negocios, transacciones, user_negocios
 
 
 @asynccontextmanager
@@ -32,6 +32,7 @@ app.add_middleware(
 app.include_router(auth.router, tags=["Autenticación"])
 app.include_router(negocios.router, tags=["Negocios"])
 app.include_router(transacciones.router, tags=["Transacciones"])
+app.include_router(user_negocios.router, tags=["Usuarios"])
 
 @app.get("/")
 async def root():

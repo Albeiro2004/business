@@ -23,6 +23,7 @@ class Usuario(Base):
     email = Column(String(150), unique=True, index=True, nullable=False)
     hashed_password = Column(String(150), nullable=False)
     activo = Column(Boolean, default=True)
+    telegram_chat_id = Column(String(50), nullable=True)
 
     negocios = relationship("Negocio", secondary=usuarios_negocios ,back_populates="usuarios")
 

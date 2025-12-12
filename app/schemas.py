@@ -9,8 +9,16 @@ class TipoTransaccion(str, PyEnum):
     egreso = "egreso"
 
 class UsuarioBase(BaseModel):
+    id: int
     nombre: str
     email: EmailStr
+
+    model_config = {
+        "from_attributes": True  # reemplaza a orm_mode
+    }
+
+class UsuarioShema(UsuarioBase):
+    pass
 
 class UsuarioCreate(UsuarioBase):
     password: str
@@ -37,6 +45,7 @@ class NegocioUpdate(BaseModel):
 class NegocioOut(NegocioBase):
     id: int
     created_at: datetime
+    usuarios: List[UsuarioOut] = []
 
     class Config:
         from_attributes = True
@@ -47,7 +56,6 @@ class TransaccionBase(BaseModel):
     tipo: TipoTransaccion
     monto: Decimal = Field(..., gt = 0, description = "Monto debe ser mayor a cero")
     descripcion: Optional[str] = None
-    fecha: date
 
 class TransaccionCreate(TransaccionBase):
     pass

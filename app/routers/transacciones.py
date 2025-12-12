@@ -48,7 +48,7 @@ async def update_transaccion(trans_id: int, tx_up: schemas.TransaccionCreate, db
     is_member = await crud.usuario_en_negocio(db, trans.negocio_id, current_user)
     if not is_member:
         raise HTTPException(status_code=403, detail="No autorizado")
-    return await crud.update_transaccion(db, trans_id, tx_up)
+    return await crud.update_transaccion(db, trans_id, tx_up, current_user.id)
 
 @router.delete("/{trans_id}")
 async def delete_transaccion(trans_id: int, db: AsyncSession = Depends(get_db), current_user: models.Usuario = Depends(get_current_user)):
@@ -58,7 +58,7 @@ async def delete_transaccion(trans_id: int, db: AsyncSession = Depends(get_db), 
     is_member = await crud.usuario_en_negocio(db, trans.negocio_id, current_user.id)
     if not is_member:
         raise HTTPException(status_code=403, detail="No autorizado")
-    await crud.delete_transaccion(db, trans_id)
+    await crud.delete_transaccion(db, trans_id, current_user.id)
     return {"detail": "Transacción eliminada"}
 
 @router.get("/negocio/{negocio_id}/balance", response_model=schemas.BalanceOut)

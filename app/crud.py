@@ -7,9 +7,12 @@ from decimal import Decimal
 from typing import List, Optional
 from datetime import datetime
 
+from sqlalchemy.orm import joinedload
 from watchfiles import awatch
 
 from app import models, schemas
+from app.utils.telegram import enviar_mensaje_telegram
+
 
 # Usuarios
 async def get_usuario_por_email(db: AsyncSession, email: str) -> Optional[models.Usuario]:
@@ -35,11 +38,15 @@ async def create_negocio(db: AsyncSession, negocio_in: schemas.NegocioCreate, us
 async def get_negocios(db: AsyncSession, usuario_id: int):
     result = await db.execute(
         select(models.Negocio)
-        .join(models.usuarios_negocios, models.usuarios_negocios.c.negocio_id == models.Negocio.id)
+        .options(joinedload(models.Negocio.usuarios))
+        .join(
+            models.usuarios_negocios,
+            models.usuarios_negocios.c.negocio_id == models.Negocio.id
+        )
         .where(models.usuarios_negocios.c.usuario_id == usuario_id)
         .order_by(models.Negocio.created_at.desc())
     )
-    return result.scalars().all()
+    return result.unique().scalars().all()
 
 async def get_negocio(db: AsyncSession, negocio_id: int, usuario_id: int) -> Optional[models.Negocio]:
     result = await db.execute(
@@ -83,11 +90,25 @@ async def create_transaccion(db: AsyncSession, tx_in: schemas.TransaccionCreate,
         tipo=models.TipoTransaccion(tx_in.tipo.value if hasattr(tx_in.tipo, "value") else tx_in.tipo),
         monto=tx_in.monto,
         descripcion=tx_in.descripcion,
-        fecha=tx_in.fecha
+        fecha=date.today(),
     )
     db.add(obj)
     await db.commit()
     await db.refresh(obj)
+
+    result = await db.execute(select(models.Usuario).where(models.Usuario.id == usuario_id))
+    usuario = result.scalar_one_or_none()
+
+    if usuario and usuario.telegram_chat_id:
+        mensaje = (
+            f"Transacción registrada por {usuario.nombre}\n\n"
+            f"<b>Tipo:</b> {tx_in.tipo.value}\n"
+            f"<b>Monto:</b> ${tx_in.monto}\n"
+            f"<b>Descripción:</b> {tx_in.descripcion or 'Sin descripción'}\n"
+            f"<b>Negocio ID:</b> {tx_in.negocio_id}"
+        )
+        await enviar_mensaje_telegram(usuario.telegram_chat_id, mensaje)
+
     return obj
 
 async def get_transacciones_by_negocio(
@@ -115,7 +136,7 @@ async def get_transaccion(db: AsyncSession, trans_id: int) -> Optional[models.Tr
     result = await db.execute(select(models.Transaccion).where(models.Transaccion.id == trans_id))
     return result.scalar_one_or_none()
 
-async def update_transaccion(db: AsyncSession, trans_id: int, tx_up: schemas.TransaccionCreate) -> Optional[models.Transaccion]:
+async def update_transaccion(db: AsyncSession, trans_id: int, tx_up: schemas.TransaccionCreate, usuario_id: int) -> Optional[models.Transaccion]:
     obj = await get_transaccion(db, trans_id)
     if not obj:
         return None
@@ -125,14 +146,39 @@ async def update_transaccion(db: AsyncSession, trans_id: int, tx_up: schemas.Tra
     obj.fecha = tx_up.fecha
     await db.commit()
     await db.refresh(obj)
+
+    result = await db.execute(select(models.Usuario).where(models.Usuario.id == usuario_id))
+    usuario = result.scalar_one_or_none()
+
+    if usuario and usuario.telegram_chat_id:
+        mensaje = (
+            f"{usuario.nombre} ha modificado la transacción a:\n\n"
+            f"<b>Tipo:</b> {tx_up.tipo.value}\n"
+            f"<b>Monto:</b> ${tx_up.monto}\n"
+            f"<b>Descripción:</b> {tx_up.descripcion or 'Sin descripción'}\n"
+            f"<b>Negocio ID:</b> {tx_up.negocio_id}"
+        )
+        await enviar_mensaje_telegram(usuario.telegram_chat_id, mensaje)
+
     return obj
 
-async def delete_transaccion(db: AsyncSession, trans_id: int) -> bool:
+async def delete_transaccion(db: AsyncSession, trans_id: int, usuario_id: int) -> bool:
     obj = await get_transaccion(db, trans_id)
     if not obj:
         return False
     await db.delete(obj)
     await db.commit()
+
+    result = await db.execute(select(models.Usuario).where(models.Usuario.id == usuario_id))
+    usuario = result.scalar_one_or_none()
+
+    if usuario and usuario.telegram_chat_id:
+        mensaje = (
+            f"Transacción eliminada por: {usuario.nombre}\n\n"
+            f"<b>User:</b> {usuario.email}\n"
+        )
+        await enviar_mensaje_telegram(usuario.telegram_chat_id, mensaje)
+
     return True
 
 # Balance
