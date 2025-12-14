@@ -50,6 +50,14 @@ class NegocioOut(NegocioBase):
     class Config:
         from_attributes = True
 
+class NegocioCreateOut(BaseModel):
+    id: int
+    nombre: str
+    descripcion: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
 #Transaccion
 class TransaccionBase(BaseModel):
     negocio_id: int

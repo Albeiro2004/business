@@ -12,7 +12,7 @@ from app.models import Negocio, Usuario
 
 router = APIRouter(prefix="/negocios", tags=["negocios"])
 
-@router.post("", response_model=schemas.NegocioOut)
+@router.post("", response_model=schemas.NegocioCreateOut)
 async def create_negocio(negocio_in: schemas.NegocioCreate, db: AsyncSession = Depends(get_db), current_user: models.Usuario = Depends(get_current_user)):
     return await crud.create_negocio(db, negocio_in, current_user.id)
 
@@ -27,19 +27,18 @@ async def get_negocio(negocio_id: int, db: AsyncSession = Depends(get_db), curre
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Negocio no encontrado")
     return obj
 
-@router.put("/{negocio_id}", response_model=schemas.NegocioOut)
+@router.put("/{negocio_id}")
 async def update_negocio(negocio_id: int, negocio_up: schemas.NegocioUpdate, db: AsyncSession = Depends(get_db), current_user: models.Usuario = Depends(get_current_user)):
     obj = await crud.update_negocio(db, negocio_id, current_user.id, negocio_up)
     if not obj:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Negocio no encontrado")
-    return obj
+    return {"mensaje": "Negocio Modificado"}
 
 @router.delete("/{negocio_id}")
 async def delete_negocio(negocio_id: int, db: AsyncSession = Depends(get_db), current_user: models.Usuario = Depends(get_current_user)):
     obj = await crud.delete_negocio(db, negocio_id, current_user.id)
     if not obj:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Negocio no encontrado")
-    await crud.delete_negocio(db, negocio_id, current_user.id)
     return {"detail": "Negocio eliminado"}
 
 @router.get("/{negocio_id}/usuarios", response_model=List[schemas.UsuarioOut])
