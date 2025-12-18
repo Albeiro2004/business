@@ -22,7 +22,8 @@ app = FastAPI(
 
 origins = [
     "https://gestor-negocios-frontend.vercel.app",
-    "http://localhost:4200"
+    "http://localhost:4200",
+    "http://localhost:8100/login"
 ]
 
 app.add_middleware(
