@@ -6,7 +6,7 @@ from app import schemas, crud, models
 from app.database import get_db
 from app.auth import get_current_user
 
-router = APIRouter(prefix="/clientes", tags=["clientes"])
+router = APIRouter(prefix="/api/clientes", tags=["clientes"])
 
 
 @router.post("", response_model=schemas.ClienteOut, status_code=status.HTTP_201_CREATED)

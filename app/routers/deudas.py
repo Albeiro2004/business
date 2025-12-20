@@ -6,7 +6,7 @@ from app import schemas, crud, models
 from app.database import get_db
 from app.auth import get_current_user
 
-router = APIRouter(prefix="/deudas", tags=["deudas"])
+router = APIRouter(prefix="/api/deudas", tags=["deudas"])
 
 
 @router.post("", response_model=schemas.DeudaOut, status_code=status.HTTP_201_CREATED)
