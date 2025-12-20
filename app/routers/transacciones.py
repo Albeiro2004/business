@@ -9,7 +9,7 @@ from app import schemas, crud, models
 from app.database import get_db
 from app.auth import get_current_user
 
-router = APIRouter(prefix="/api/transacciones", tags=["transacciones"])
+router = APIRouter(prefix="/transacciones", tags=["transacciones"])
 
 @router.post("", response_model=schemas.TransaccionOut)
 async def create_transaccion(tx_in: schemas.TransaccionCreate,

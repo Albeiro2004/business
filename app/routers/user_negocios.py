@@ -7,7 +7,7 @@ from app.database import get_db
 from app.schemas import UsuarioShema
 from app import models
 
-router = APIRouter(prefix="/api/usuarios", tags=["Usuarios"])
+router = APIRouter(prefix="/usuarios", tags=["Usuarios"])
 
 @router.get("/buscar", response_model=List[UsuarioShema])
 async def buscar_usuarios(query: str = Query(..., min_length=4), db: AsyncSession = Depends(get_db)):

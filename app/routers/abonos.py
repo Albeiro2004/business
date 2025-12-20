@@ -6,7 +6,7 @@ from app import schemas, crud, models
 from app.database import get_db
 from app.auth import get_current_user
 
-router = APIRouter(prefix="/api/abonos", tags=["abonos"])
+router = APIRouter(prefix="/abonos", tags=["abonos"])
 
 
 @router.post("", response_model=schemas.AbonoOut, status_code=status.HTTP_201_CREATED)

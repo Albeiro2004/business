@@ -10,7 +10,7 @@ from app.database import get_db
 from app.auth import get_current_user
 from app.models import Negocio, Usuario
 
-router = APIRouter(prefix="/api/negocios", tags=["negocios"])
+router = APIRouter(prefix="/negocios", tags=["negocios"])
 
 @router.post("", response_model=schemas.NegocioCreateOut)
 async def create_negocio(negocio_in: schemas.NegocioCreate, db: AsyncSession = Depends(get_db), current_user: models.Usuario = Depends(get_current_user)):

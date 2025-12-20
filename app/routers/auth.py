@@ -8,7 +8,7 @@ from app.models import Usuario
 from app.database import get_db
 from app.auth import hash_password, verify_password, create_access_token
 
-router = APIRouter(prefix="/api/auth", tags=["auth"])
+router = APIRouter(prefix="/auth", tags=["auth"])
 
 @router.post("/register", response_model=schemas.UsuarioOut)
 async def register(user_in: schemas.UsuarioCreate, db: AsyncSession = Depends(get_db)):
